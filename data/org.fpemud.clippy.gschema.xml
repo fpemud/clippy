@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
-  <schema path="/org/fpemud/clippy" id="org.fpemud.clippy" gettext-domain="clippy">
-    <key type="s" name="agent">
+  <schema path="/org/fpemud/clippy/" id="org.fpemud.clippy" gettext-domain="clippy">
+    <key name="agent" type="s">
       <default>Clippy</default>
       <summary>Agent</summary>
       <description>Which agent to use</description>
     </key>
-    <key type="s" name="background">
+    <key name="background" type="s">
       <default>#ffffff</default>
       <summary>Background Color</summary>
       <description>Background color if alpha display is not supported</description>
     </key>
-    <key type="b" name="native-resolution">
+    <key name="native-resolution" type="b">
       <default>false</default>
       <summary>Use native resolution</summary>
       <description>Use native resolution of agent</description>
     </key>
-    <key type="i" name="x-resolution">
+    <key name="x-resolution" type="i">
       <default>400</default>
       <summary>Agent Width</summary>
       <description>The width of the agent, in pixels</description>
     </key>
-    <key type="i" name="y-resolution">
+    <key name="y-resolution" type="i">
       <default>400</default>
       <summary>Agent Height</summary>
       <description>The height of the agent, in pixels</description>
