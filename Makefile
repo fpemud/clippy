@@ -19,7 +19,7 @@ install:
 
 	install -d -m 0755 "$(DESTDIR)/$(prefix)/share/glib-2.0/schemas"
 	cp -r data/org.fpemud.clippy.gschema.xml "$(DESTDIR)/$(prefix)/share/glib-2.0/schemas"
-	chmod 644 "$(DESTDIR)/$(prefix)/share/glib-2.0/schemas"
+	chmod 644 "$(DESTDIR)/$(prefix)/share/glib-2.0/schemas/org.fpemud.clippy.gschema.xml"
 
 uninstall:
 	rm -Rf "$(DESTDIR)/$(prefix)/bin/clippy"
