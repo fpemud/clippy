@@ -32,7 +32,7 @@ class CAgent:
 
     @property
     def image_surface(self):
-		return self._surface
+        return self._surface
 
     @property
     def frame_offset(self):

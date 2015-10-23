@@ -38,7 +38,7 @@ class CWindow(Gtk.ApplicationWindow):
         cr.paint()
 
         off_x, off_y = self._app.agent.frame_offset
-        cr.set_source_surface(cr, self._app.agent.image_surface, off_x, off_y)
+        cr.set_source_surface(cr, self._app.agent.surface, off_x, off_y)
         cr.paint()
 
     def on_agent_changed(self, agent_name):

@@ -2,13 +2,10 @@
 # -*- coding: utf-8; tab-width: 4; indent-tabs-mode: t -*-
 
 import sys
-from gi.repository import GObject
-sys.path.append('/usr/lib/assistant/libclippy')
-from fvp_application import FvpApplication
+sys.path.append('/usr/lib/clippy')
+from application import CApplication
 
-
-GObject.threads_init()
-
-app = CApplication()
-ret = app.run(sys.argv)
-sys.exit(ret)
+if __name__ == "__main__":
+    app = CApplication()
+    ret = app.run(sys.argv)
+    sys.exit(ret)
