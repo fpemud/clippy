@@ -12,8 +12,8 @@ install:
 	find "$(DESTDIR)/$(prefix)/lib/clippy" -type f | xargs chmod 644
 	find "$(DESTDIR)/$(prefix)/lib/clippy" -type d | xargs chmod 755
 
-	install -d -m 0755 "$(DESTDIR)/$(prefix)/share/clippy"
-	cp -r agents/* "$(DESTDIR)/$(prefix)/share/clippy"
+	install -d -m 0755 "$(DESTDIR)/$(prefix)/share/clippy/agents"
+	cp -r agents/* "$(DESTDIR)/$(prefix)/share/clippy/agents"
 	find "$(DESTDIR)/$(prefix)/share/clippy" -type f | xargs chmod 644
 	find "$(DESTDIR)/$(prefix)/share/clippy" -type d | xargs chmod 755
 

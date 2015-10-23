@@ -1,9 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8; tab-width: 4; indent-tabs-mode: t -*-
 
-import tempfile
-import shutil
-from gi.repository import GLib
+import os
 from gi.repository import Gio
 from gi.repository import Gtk
 from agent import CAgent
@@ -46,7 +44,7 @@ class CApplication(Gtk.Application):
             return
         if key == "x-resolution":
             return
-        if key == "y-resolution": 
+        if key == "y-resolution":
             return
 
     def _adv_get_setting_agent(self):

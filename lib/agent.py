@@ -14,8 +14,9 @@ class CAgent:
         self._app = app
         self._name = agent_name
         self._dirname = os.path.join(self._app.agents_path, self._name)
-        self._prop = json.load(os.path.join(self._dirname, "agent.json"))
         self._surface = cairo.ImageSurface.create_from_png(os.path.join(self._dirname, "map.png"))
+        with open(os.path.join(self._dirname, "agent.json"), "r") as f:
+            self._prop = json.load(f)
 
         self._animation = None
         self._start_time = None
@@ -31,7 +32,7 @@ class CAgent:
         return self._name
 
     @property
-    def image_surface(self):
+    def surface(self):
         return self._surface
 
     @property
@@ -72,7 +73,7 @@ class CAgent:
 
     def play_animation(self, animation_name):
         assert self._animation is None
-        
+
         self._animation = self._prop["animations"][animation_name]
         self._start_time = datetime.now().microsecond * 1000
         self._cur_frame_index = 0
