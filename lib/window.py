@@ -13,11 +13,18 @@ class CWindow(Gtk.ApplicationWindow):
 
         self._app = app
 
-        self.set_size_request(self._app.settings.get_int("x-resolution"), self._app.settings.get_int("y-resolution"))
+        if self._app.settings.get_boolean("native-resolution"):
+            sz_x, sz_y = self._app.agent.frame_size
+            self.set_size_request(sz_x, sz_y)
+        else:
+            sz_x = self._app.settings.get_int("x-resolution")
+            sz_y = self._app.settings.get_int("y-resolution")
+            self.set_size_request(sz_x, sz_y)
+
         self.set_keep_above(True)
         self.set_app_paintable(True)
 
-        # trick, set value for _support_alpha, visual, and decorated 
+        # trick, set value for _support_alpha, visual, and decorated
         self.on_screen_changed(self, None, None)
 
         self.connect("screen-changed", self.on_screen_changed)
@@ -40,9 +47,20 @@ class CWindow(Gtk.ApplicationWindow):
             cr.set_source_rgb(rgb2rf(bgcolor), rgb2gf(bgcolor), rgb2bf(bgcolor))
             cr.paint()
 
-        off_x, off_y = self._app.agent.frame_offset
-        cr.set_source_surface(self._app.agent.surface, off_x, off_y)
-        cr.paint()
+        if True:
+            off_x, off_y = self._app.agent.frame_offset
+            cr.set_source_surface(self._app.agent.surface, off_x, off_y)
+    
+            print(self._app.settings.get_boolean("native-resolution"))
+            if self._app.settings.get_boolean("native-resolution"):
+                cr.reset_clip()
+                sz_x, sz_y = self._app.agent.frame_size
+                cr.rectangle(0, 0, sz_x, sz_y)
+                cr.clip()
+            else:
+                assert False
+    
+            cr.paint()
         
         return False
 

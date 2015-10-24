@@ -12,7 +12,7 @@
       <description>Background color if alpha display is not supported</description>
     </key>
     <key name="native-resolution" type="b">
-      <default>false</default>
+      <default>true</default>
       <summary>Use native resolution</summary>
       <description>Use native resolution of agent</description>
     </key>
