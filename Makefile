@@ -1,7 +1,10 @@
 PACKAGE_VERSION=0.0.1
 prefix=/usr
 
+all:
+
 clean:
+	find . -name "__pycache__" | xargs rm -Rf
 
 install:
 	install -d -m 0755 "$(DESTDIR)/$(prefix)/bin"
@@ -27,5 +30,5 @@ uninstall:
 	rm -Rf "$(DESTDIR)/$(prefix)/share/clippy"
 	rm -Rf "$(DESTDIR)/$(prefix)/share/glib-2.0/schemas"
 
-.PHONY: clean install uninstall
+.PHONY: all clean install uninstall
 

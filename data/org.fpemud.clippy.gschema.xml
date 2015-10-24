@@ -6,7 +6,7 @@
       <summary>Agent Name</summary>
       <description>Which agent to use</description>
     </key>
-    <key name="background" type="s">
+    <key name="background-color" type="s">
       <default>"#ffffff"</default>
       <summary>Background Color</summary>
       <description>Background color if alpha display is not supported</description>
