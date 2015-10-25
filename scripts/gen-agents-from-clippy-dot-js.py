@@ -105,8 +105,7 @@ def convertAgent(srcDir, agentsDir):
             with open(fn, "wb") as f2:
                 f2.write(base64.b64decode(v))
 
-#if __main__ == "__main__":
-if True:
+if __name__ == "__main__":
     argParser = argparse.ArgumentParser()
     argParser.add_argument("--gitdir")
     ret = argParser.parse_args()
@@ -120,8 +119,7 @@ if True:
 
     assert os.path.isdir(srcAgentsDir)
 
-    libclippyDir = os.path.abspath(os.path.dirname(os.path.abspath(__file__)) + "/../lib")
-    agentsDir = os.path.join(libclippyDir, "agents")
+    agentsDir = os.path.abspath(os.path.dirname(os.path.abspath(__file__)) + "/../agents")
     if os.path.exists(agentsDir):
         shutil.rmtree(agentsDir)
 

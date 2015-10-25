@@ -13,25 +13,24 @@ class CWindow(Gtk.ApplicationWindow):
 
         self._app = app
 
-        if self._app.settings.get_boolean("native-resolution"):
-            sz_x, sz_y = self._app.agent.frame_size
-            self.set_size_request(sz_x, sz_y)
-        else:
-            sz_x = self._app.settings.get_int("x-resolution")
-            sz_y = self._app.settings.get_int("y-resolution")
-            self.set_size_request(sz_x, sz_y)
+        sz_x, sz_y = self._adv_get_resolution()
+        p_x, p_y = self._adv_get_position(sz_x, sz_y)
 
         self.set_keep_above(True)
+        # self.set_deletable(False)
         self.set_app_paintable(True)
+        self.set_size_request(sz_x, sz_y)
+        self.move(p_x, p_y)
+        self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
 
         # trick, set value for _support_alpha, visual, and decorated
         self.on_screen_changed(self, None, None)
 
         self.connect("screen-changed", self.on_screen_changed)
         self.connect("draw", self.on_draw)
-
-        self._app.agent.register_agent_change_handler(self.on_agent_changed)
-        self._app.agent.register_animation_playback_handler(self.on_agent_animation_playback)
+        self.connect("button-press-event", self.on_mouse_button_press)
+        self._app.agent.connect("notify::agent-name", self.on_agent_changed)
+        self._app.agent.connect("animation-playback", self.on_agent_animation_playback)
 
     def on_screen_changed(self, widget, previous_screen, user_data=None):
         screen = self.get_screen()
@@ -44,14 +43,13 @@ class CWindow(Gtk.ApplicationWindow):
 
         if not self._supports_alpha:
             bgcolor = self._app.settings.get_string("background-color")
-            cr.set_source_rgb(rgb2rf(bgcolor), rgb2gf(bgcolor), rgb2bf(bgcolor))
+            cr.set_source_rgb(util.rgb2rf(bgcolor), util.rgb2gf(bgcolor), util.rgb2bf(bgcolor))
             cr.paint()
 
-        if True:
+        if self._app.agent.get_property("agent-name") != "" and not self._app.agent.frame_is_blank():
             off_x, off_y = self._app.agent.frame_offset
             cr.set_source_surface(self._app.agent.surface, off_x, off_y)
-    
-            print(self._app.settings.get_boolean("native-resolution"))
+
             if self._app.settings.get_boolean("native-resolution"):
                 cr.reset_clip()
                 sz_x, sz_y = self._app.agent.frame_size
@@ -59,13 +57,48 @@ class CWindow(Gtk.ApplicationWindow):
                 cr.clip()
             else:
                 assert False
-    
+
             cr.paint()
-        
+
         return False
 
-    def on_agent_changed(self, agent_name):
-        pass
+    def on_mouse_button_press(self, widget, event, user_data=None):
+        if event.type == Gdk.EventType.BUTTON_PRESS and event.button == 1:
+            self.begin_move_drag(event.button, event.x_root, event.y_root, event.time)
+            return False
 
-    def on_agent_animation_playback(self, frame_offset, frame_size, frame_sound_file):
+        if event.type == Gdk.EventType.BUTTON_PRESS and event.button == 3:
+            #            self._show_popup_menu()
+            self._app.agent.play_random_animation()
+            return False
+
+        return False
+
+    def on_agent_changed(self, obj):
+        assert obj == self._app.agent
+
+        sz_x, sz_y = self._adv_get_resolution()
+        self.set_size_request(sz_x, sz_y)
+
+    def on_agent_animation_playback(self, obj):
+        assert obj == self._app.agent
+
+        self.queue_draw()
+        # if there's sound, play it
+
+    def _adv_get_resolution(self):
+        if self._app.settings.get_boolean("native-resolution") and self._app.agent.get_property("agent-name") != "":
+            sz_x, sz_y = self._app.agent.frame_size
+        else:
+            sz_x = self._app.settings.get_int("x-resolution")
+            sz_y = self._app.settings.get_int("y-resolution")
+        return (sz_x, sz_y)
+
+    def _adv_get_position(self, sz_x, sz_y):
+        screen = self.get_screen()
+        p_x = screen.get_width() / 4 * 5 - sz_x / 2
+        p_y = screen.get_height() / 4 * 5 - sz_y / 2
+        return (p_x, p_y)
+
+    def _show_popup_menu(self):
         pass

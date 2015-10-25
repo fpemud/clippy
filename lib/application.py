@@ -18,7 +18,7 @@ class CApplication(Gtk.Application):
         self._settings = Gio.Settings.new("org.fpemud.clippy")
         self._settings.connect("changed", self.on_setting_changed)
 
-        self._agent = CAgent(self, self._adv_get_setting_agent())
+        self._agent = CAgent(self)
 
         self._main_win = None
 
@@ -38,6 +38,7 @@ class CApplication(Gtk.Application):
         self._main_win = CWindow(self)
         self.add_window(self._main_win)
         self._main_win.show_all()
+        self._agent.change_agent(self._adv_get_setting_agent())
 
     def on_setting_changed(self, settings, key):
         if key == "agent":

@@ -4,141 +4,195 @@
 import os
 import json
 import cairo
-from datetime import datetime
-from gi.repository import GLib
+import random
+from collections import deque
+from gi.repository import GObject
 
 
-class CAgent:
+class CAgent(GObject.GObject):
 
-    def __init__(self, app, agent_name):
+    __gproperties__ = {
+        'agent-name': (GObject.TYPE_STRING,                      # type
+                       'agent-name',                             # nick name
+                       'name of agent',                          # description
+                       None,                                     # default value
+                       GObject.PARAM_READABLE),                  # flags
+    }
+
+    __gsignals__ = {
+        'animation-playback': (GObject.SIGNAL_RUN_FIRST, None, ()),
+        'animation-end': (GObject.SIGNAL_RUN_FIRST, None, ()),
+    }
+
+    def __init__(self, app):
+        GObject.GObject.__init__(self)
+
+        self._animation_spacing_time = 10                   # time interval between animations, unit: ms
         self._app = app
-        self._name = agent_name
-        self._dirname = os.path.join(self._app.agents_path, self._name)
-        self._surface = cairo.ImageSurface.create_from_png(os.path.join(self._dirname, "map.png"))
-        with open(os.path.join(self._dirname, "agent.json"), "r") as f:
-            self._prop = json.load(f)
 
-        self._animation = None
-        self._start_time = None
-        self._cur_frame_index = None
-        self._cur_aggr_time = None
-        self._timeout_cb = None
+        self._name = ""                                     # agent name
+        self._dirname = None                                # agent directory
+        self._surface = None                                # surface created from map.png
+        self._prop = None                                   # object read from agent.json
 
-        self._agent_change_handler_list = []
-        self._animation_playback_handler_list = []
+        self._aplay = None                                  # str:animation name
+        self._aplay_frame = None                            # int:frame index
+        self._aplay_exiting = None                          # bool
+        self._aplay_timeout_cb = None
+
+        self._pending_animations = deque()                  # deque<str:animation name>
+        self._pa_timeout_cb = None
+
+        self._pending_agent_change = None                   # str:agent name,
+        self._pac_timeout_cb = None
+
+    def do_get_property(self, prop):
+        if prop.name == 'agent-name':
+            return self._name
+        else:
+            raise AttributeError('unknown property %s' % (prop.name))
 
     @property
-    def name(self):
-        return self._name
+    def agent_list(self):
+        return sorted(os.listdir(self._app.agents_path))
 
     @property
-    def surface(self):
-        return self._surface
+    def frame_is_blank(self):
+        assert self._name != ""
+
+        if self._aplay is None:
+            return False
+        if "images" not in self._prop["animations"][self._aplay]["frames"][self._aplay_frame]:
+            return True
+        return False
 
     @property
     def frame_offset(self):
-        if self._animation is None:
-            return (0, 0)
+        assert self._name != ""
 
-        offset_info = self._animation["frames"][self._cur_frame_index]["images"][0]
-        return (offset_info[0], offset_info[1])
+        if self._aplay is None:
+            return (0, 0)
+        else:
+            offset_info = self._prop["animations"][self._aplay]["frames"][self._aplay_frame]["images"][0]
+            return (offset_info[0], offset_info[1])
 
     @property
     def frame_size(self):
+        assert self._name != ""
         return (self._prop["framesize"][0], self._prop["framesize"][1])
 
     @property
     def frame_sound_file(self):
-        ret = self._animation["frames"][self._cur_frame_index].get("sound", None)
+        assert self._name != ""
+
+#        ret = self._aplay["frames"][self._aplay_frame].get("sound", None)
+        ret = None
         if ret is None:
             return None
         return os.path.join(self._dirname, "%s.mp3" % (ret))
 
+    @property
+    def surface(self):
+        assert self._name != ""
+        return self._surface
+
     def change_agent(self, agent_name):
-        if self._animation is not None:
-            if self._timeout_cb is not None:
-                GLib.source_remove(self._timeout_cb)
-            self._animation = None
-            self._start_time = None
-            self._cur_frame_index = None
-            self._cur_aggr_time = None
-            self._timeout_cb = None
+        assert agent_name == "" or agent_name in os.listdir(self._app.agents_path)
 
-        self._name = agent_name
-        self._dirname = os.path.join(self._app.agents_path, self._name)
-        self._prop = json.load(os.path.join(self._dirname, "agent.json"))
-        self._surface = cairo.ImageSurface.create_from_png(os.path.join(self._dirname, "map.png"))
-
-        self._agent_change_notify()
+        self._pending_agent_change = agent_name
+        if self._aplay:
+            self._aplay_exiting = True
+            self._pending_animations.clear()
+        else:
+            if len(self._pending_animations) > 0:
+                if self._pa_timeout_cb is not None:
+                    GObject.source_remove(self._pa_timeout_cb)
+                    self._pa_timeout_cb = None
+                self._pending_animations.clear()
+            self._do_change_agent()
 
     def play_animation(self, animation_name):
-        assert self._animation is None
+        assert self._name != ""
+        assert not (self._aplay is not None and self._aplay_exiting)
+        assert self._pending_agent_change is None
+        assert animation_name in self._prop["animations"]
 
-        self._animation = self._prop["animations"][animation_name]
-        self._start_time = datetime.now().microsecond * 1000
-        self._cur_frame_index = 0
-        self._cur_aggr_time = 0
+        self._pending_animations.append(animation_name)
+        if self._aplay is None and len(self._pending_animations) == 1:
+            self._do_play_animation()
 
-        self._timeout_cb = GLib.time_out_add(self._animation["frames"][self._cur_frame_index]["duration"], self._timeout_callback)
-        self._animation_playback_notify()
+    def play_random_animation(self):
+        kl = list(self._prop["animations"].keys())
+        self.play_animation(kl[random.randrange(0, len(kl))])
 
-    def abort_animation(self):
-        assert self._animation is not None
+    def _do_change_agent(self):
+        self._name = self._pending_agent_change
+        self._pending_agent_change = None
 
-        if self._timeout_cb is not None:
-            GLib.source_remove(self._timeout_cb)
-        self._animation = None
-        self._start_time = None
-        self._cur_frame_index = None
-        self._cur_aggr_time = None
-        self._timeout_cb = None
-
-        self._animation_playback_notify()
-
-    def is_in_animation(self):
-        return self._animation is not None
-
-    def register_agent_change_handler(self, callback):
-        self._agent_change_handler_list.append(callback)
-
-    def register_animation_playback_handler(self, callback):
-        self._animation_playback_handler_list.append(callback)
-
-    def _agent_change_notify(self):
-        for handler in self._agent_change_handler_list:
-            handler(self.name)
-
-    def _animation_playback_notify(self):
-        for handler in self._animation_playback_handler_list:
-            handler(self.frame_offset, self.frame_size, self.frame_sound_file)
-
-    def _timeout_callback(self):
-        tlast = datetime.now().microsecond * 1000 - self._start_time
-
-        # calculate which frame we should be on
-        i = self._cur_frame_index
-        at = self._cur_aggr_time
-        while True:
-            if i > len(self._animation["frames"]) - 1:
-                break
-            if tlast - (self._cur_aggr_time + self._animation["frames"][i]["duration"]) < 0:
-                break
-            at = at + self._animation["frames"][i]["duration"]
-            i = i + 1
-        assert i > self._cur_frame_index
-
-        # do the next step
-        if i <= len(self._animation["frames"]) - 1:
-            self._cur_frame_index = i                       # animation continues
-            self._cur_aggr_time = at
-            intv = self._cur_aggr_time + self._animation["frames"][self._cur_frame_index]["duration"] - tlast
-            self._timeout_cb = GLib.time_out_add(intv, self._timeout_callback)
+        if self._name != "":
+            self._dirname = os.path.join(self._app.agents_path, self._name)
+            self._surface = cairo.ImageSurface.create_from_png(os.path.join(self._dirname, "map.png"))
+            with open(os.path.join(self._dirname, "agent.json"), "r") as f:
+                self._prop = json.load(f)
+            if "Greeting" in self._prop["animations"]:
+                self._pending_animations.append("Greeting")
+                self._do_play_animation()
         else:
-            self._animation = None                          # animation completes
-            self._start_time = None
-            self._cur_frame_index = None
-            self._cur_aggr_time = None
-            self._timeout_cb = None
+            self._dirname = None
+            self._surface = None
+            self._prop = None
 
-        self._animation_playback_notify()
+    def _do_play_animation(self):
+        self._aplay = self._pending_animations.popleft()
+        self._aplay_frame = 0
+        self._aplay_exiting = False
+
+        intv = self._prop["animations"][self._aplay]["frames"][self._aplay_frame]["duration"]
+        self._aplay_timeout_cb = GObject.timeout_add(intv, self._aplay_timeout_callback)
+        self.emit("animation-playback")
+
+    def _aplay_timeout_callback(self):
+        aobj = self._prop["animations"][self._aplay]
+        fmobj = aobj["frames"][self._aplay_frame]
+
+        if self._aplay_exiting and "exitBranch" in fmobj:
+            self._aplay_frame = fmobj["exitBranch"]
+        elif "branching" in fmobj:
+            rnd = random.randrange(0, 100)
+            for branch in fmobj["branching"]["branches"]:
+                if rnd <= branch["weight"]:
+                    self._aplay_frame = branch["frameIndex"]
+                    break
+                rnd -= branch["weight"]
+        else:
+            self._aplay_frame += 1
+
+        if self._aplay_frame <= len(aobj["frames"]) - 1:
+            # animation continues
+            intv = self._prop["animations"][self._aplay]["frames"][self._aplay_frame]["duration"]
+            self._aplay_timeout_cb = GObject.timeout_add(intv, self._aplay_timeout_callback)
+        else:
+            # animation completes
+            self._aplay = None
+            self._aplay_frame = None
+            self._aplay_exiting = None
+            self._aplay_timeout_cb = None
+
+            if len(self._pending_animations) > 0:
+                self._pa_timeout_cb = GObject.timeout_add(self._animation_spacing_time, self._pa_timeout_callback)
+            elif self._pending_agent_change is not None:
+                self._pac_timeout_cb = GObject.timeout_add(self._animation_spacing_time, self._pac_timeout_callback)
+
+        self.emit("animation-playback")
         return False
+
+    def _pa_timeout_callback(self):
+        self._pa_timeout_cb = None
+        self._do_play_animation()
+
+    def _pac_timeout_callback(self):
+        self._pac_timeout_cb = None
+        self._do_change_agent()
+
+
+GObject.type_register(CAgent)
