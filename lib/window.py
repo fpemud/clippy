@@ -46,9 +46,11 @@ class CWindow(Gtk.ApplicationWindow):
             cr.set_source_rgb(util.rgb2rf(bgcolor), util.rgb2gf(bgcolor), util.rgb2bf(bgcolor))
             cr.paint()
 
-        if self._app.agent.get_property("agent-name") != "" and not self._app.agent.frame_is_blank():
+        if self._app.agent.get_property("agent-name") != "" and not self._app.agent.frame_is_blank:
             off_x, off_y = self._app.agent.frame_offset
             cr.set_source_surface(self._app.agent.surface, off_x, off_y)
+
+            print("on_draw", self._app.agent._aplay, off_x, off_y)
 
             if self._app.settings.get_boolean("native-resolution"):
                 cr.reset_clip()
@@ -69,7 +71,7 @@ class CWindow(Gtk.ApplicationWindow):
 
         if event.type == Gdk.EventType.BUTTON_PRESS and event.button == 3:
             #            self._show_popup_menu()
-            self._app.agent.play_random_animation()
+            self._app.agent.play_animation("Greeting")
             return False
 
         return False
@@ -83,6 +85,7 @@ class CWindow(Gtk.ApplicationWindow):
     def on_agent_animation_playback(self, obj):
         assert obj == self._app.agent
 
+        print("on_agent_animation_playback")
         self.queue_draw()
         # if there's sound, play it
 
