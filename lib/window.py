@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8; tab-width: 4; indent-tabs-mode: t -*-
 
+import os
+import random
 from gi.repository import Gtk
 from gi.repository import Gdk
 from util import util
@@ -13,24 +15,49 @@ class CWindow(Gtk.ApplicationWindow):
 
         self._app = app
 
-        sz_x, sz_y = self._adv_get_resolution()
-        p_x, p_y = self._adv_get_position(sz_x, sz_y)
+        self.gtk_builder = Gtk.Builder()
+        self.gtk_builder.add_from_file(os.path.join(self._app.lib_path, "context-menu.ui"))
+
+        self.context_menu = self.gtk_builder.get_object("context-menu")
 
         self.set_keep_above(True)
-        # self.set_deletable(False)
+        self.set_skip_taskbar_hint(True)
+        self.set_skip_pager_hint(True)
         self.set_app_paintable(True)
+
+        sz_x, sz_y = self._adv_get_resolution()
         self.set_size_request(sz_x, sz_y)
+
+        p_x, p_y = self._adv_get_position(sz_x, sz_y)
         self.move(p_x, p_y)
+
         self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
 
         # trick, set value for _support_alpha, visual, and decorated
         self.on_screen_changed(self, None, None)
 
+        # connect signals
+        self.gtk_builder.connect_signals(self)
+
         self.connect("screen-changed", self.on_screen_changed)
         self.connect("draw", self.on_draw)
         self.connect("button-press-event", self.on_mouse_button_press)
+
         self._app.agent.connect("notify::agent-name", self.on_agent_changed)
         self._app.agent.connect("animation-playback", self.on_agent_animation_playback)
+
+    def on_app_switch_agent(self, menu_item, user_data=None):
+        al = self._app.agent.agent_list
+        self._app.agent.change_agent(al[random.randrange(0, len(al))])
+
+    def on_app_help(self, menu_item, user_data=None):
+        pass
+
+    def on_app_about(self, menu_item, user_data=None):
+        pass
+
+    def on_app_quit(self, menu_item, user_data=None):
+        self._app.agent.change_agent("")
 
     def on_screen_changed(self, widget, previous_screen, user_data=None):
         screen = self.get_screen()
@@ -39,8 +66,6 @@ class CWindow(Gtk.ApplicationWindow):
         self.set_decorated(not self._supports_alpha)
 
     def on_draw(self, widget, cr, user_data=None):
-        cr = Gdk.cairo_create(widget.get_window())
-
         if not self._supports_alpha:
             bgcolor = self._app.settings.get_string("background-color")
             cr.set_source_rgb(util.rgb2rf(bgcolor), util.rgb2gf(bgcolor), util.rgb2bf(bgcolor))
@@ -48,9 +73,7 @@ class CWindow(Gtk.ApplicationWindow):
 
         if self._app.agent.get_property("agent-name") != "" and not self._app.agent.frame_is_blank:
             off_x, off_y = self._app.agent.frame_offset
-            cr.set_source_surface(self._app.agent.surface, off_x, off_y)
-
-            print("on_draw", self._app.agent._aplay, off_x, off_y)
+            cr.set_source_surface(self._app.agent.surface, off_x * -1, off_y * -1)
 
             if self._app.settings.get_boolean("native-resolution"):
                 cr.reset_clip()
@@ -70,22 +93,24 @@ class CWindow(Gtk.ApplicationWindow):
             return False
 
         if event.type == Gdk.EventType.BUTTON_PRESS and event.button == 3:
-            #            self._show_popup_menu()
-            self._app.agent.play_animation("Greeting")
+            self.context_menu.popup(None, None, None, None, event.button, event.time)
             return False
 
         return False
 
-    def on_agent_changed(self, obj):
+    def on_agent_changed(self, obj, param):
         assert obj == self._app.agent
+
+        # changing to null-agent means we are quitting
+        if self._app.agent.get_property("agent-name") == "":
+            self._app.quit()
+            return
 
         sz_x, sz_y = self._adv_get_resolution()
         self.set_size_request(sz_x, sz_y)
 
     def on_agent_animation_playback(self, obj):
         assert obj == self._app.agent
-
-        print("on_agent_animation_playback")
         self.queue_draw()
         # if there's sound, play it
 
@@ -102,6 +127,3 @@ class CWindow(Gtk.ApplicationWindow):
         p_x = screen.get_width() / 4 * 5 - sz_x / 2
         p_y = screen.get_height() / 4 * 5 - sz_y / 2
         return (p_x, p_y)
-
-    def _show_popup_menu(self):
-        pass

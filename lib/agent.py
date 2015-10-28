@@ -21,7 +21,6 @@ class CAgent(GObject.GObject):
 
     __gsignals__ = {
         'animation-playback': (GObject.SIGNAL_RUN_FIRST, None, ()),
-        'animation-end': (GObject.SIGNAL_RUN_FIRST, None, ()),
     }
 
     def __init__(self, app):
@@ -43,7 +42,7 @@ class CAgent(GObject.GObject):
         self._pending_animations = deque()                  # deque<str:animation name>
         self._pa_timeout_cb = None
 
-        self._pending_agent_change = None                   # str:agent name,
+        self._pending_agent_change = None                   # str:agent name
         self._pac_timeout_cb = None
 
     def do_get_property(self, prop):
@@ -62,6 +61,8 @@ class CAgent(GObject.GObject):
 
         if self._aplay is None:
             return False
+        if self._pac_timeout_cb is not None:
+            return True
         if "images" not in self._prop["animations"][self._aplay]["frames"][self._aplay_frame]:
             return True
         return False
@@ -99,18 +100,37 @@ class CAgent(GObject.GObject):
     def change_agent(self, agent_name):
         assert agent_name == "" or agent_name in os.listdir(self._app.agents_path)
 
+        if self._pending_agent_change is not None:
+            self._pending_agent_change = agent_name
+            return
+
+        if self._name == agent_name:
+            return
+
         self._pending_agent_change = agent_name
-        if self._aplay:
+
+        if self._name == "":
+            self._do_change_agent()
+            return
+
+        self._pending_animations.clear()
+        if "GoodBye" in self._prop["animations"]:
+            self._pending_animations.append("GoodBye")
+        elif "Hide" in self._prop["animations"]:
+            self._pending_animations.append("Hide")
+
+        if self._aplay is not None:
             self._aplay_exiting = True
-            self._pending_animations.clear()
         else:
-            if len(self._pending_animations) > 0:
+            if len(self._pending_animations) == 0:
                 if self._pa_timeout_cb is not None:
                     GObject.source_remove(self._pa_timeout_cb)
                     self._pa_timeout_cb = None
-                self._pending_animations.clear()
-            self._do_change_agent()
-
+                self._do_change_agent()
+            else:
+                if self._pa_timeout_cb is None:
+                    self._pa_timeout_cb = GObject.timeout_add(self._animation_spacing_time, self._pa_timeout_callback)
+    
     def play_animation(self, animation_name):
         assert self._name != ""
         assert not (self._aplay is not None and self._aplay_exiting)
@@ -137,10 +157,15 @@ class CAgent(GObject.GObject):
             if "Greeting" in self._prop["animations"]:
                 self._pending_animations.append("Greeting")
                 self._do_play_animation()
+            elif "Show" in self._prop["animations"]:
+                self._pending_animations.append("Show")
+                self._do_play_animation()
         else:
             self._dirname = None
             self._surface = None
             self._prop = None
+
+        self.notify("agent-name")
 
     def _do_play_animation(self):
         self._aplay = self._pending_animations.popleft()
@@ -159,11 +184,15 @@ class CAgent(GObject.GObject):
             self._aplay_frame = fmobj["exitBranch"]
         elif "branching" in fmobj:
             rnd = random.randrange(0, 100)
+            go_branch = False
             for branch in fmobj["branching"]["branches"]:
                 if rnd <= branch["weight"]:
                     self._aplay_frame = branch["frameIndex"]
+                    go_branch = True
                     break
                 rnd -= branch["weight"]
+            if not go_branch:
+                self._aplay_frame += 1
         else:
             self._aplay_frame += 1
 
@@ -181,7 +210,7 @@ class CAgent(GObject.GObject):
             if len(self._pending_animations) > 0:
                 self._pa_timeout_cb = GObject.timeout_add(self._animation_spacing_time, self._pa_timeout_callback)
             elif self._pending_agent_change is not None:
-                self._pac_timeout_cb = GObject.timeout_add(self._animation_spacing_time, self._pac_timeout_callback)
+                self._pac_timeout_cb = GObject.timeout_add(0, self._pac_timeout_callback)
 
         self.emit("animation-playback")
         return False

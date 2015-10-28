@@ -13,6 +13,7 @@ class CApplication(Gtk.Application):
     def __init__(self):
         Gtk.Application.__init__(self, application_id="org.fpemud.clippy")
 
+        self._lib_path = "/usr/lib/clippy"
         self._agents_path = "/usr/share/clippy/agents"
 
         self._settings = Gio.Settings.new("org.fpemud.clippy")
@@ -21,6 +22,10 @@ class CApplication(Gtk.Application):
         self._agent = CAgent(self)
 
         self._main_win = None
+
+    @property
+    def lib_path(self):
+        return self._lib_path
 
     @property
     def agents_path(self):
@@ -50,7 +55,7 @@ class CApplication(Gtk.Application):
 
     def _adv_get_setting_agent(self):
         ret = self._settings.get_string("agent")
-        if not os.path.exists(os.path.join(self._agents_path, ret)):
+        if ret == "" or not os.path.exists(os.path.join(self._agents_path, ret)):
             ret = self._settings.get_default_value("agent")
             assert os.path.exists(os.path.join(self._agents_path, ret))
         return ret

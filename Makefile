@@ -12,6 +12,7 @@ install:
 
 	install -d -m 0755 "$(DESTDIR)/$(prefix)/lib/clippy"
 	cp -r lib/* "$(DESTDIR)/$(prefix)/lib/clippy"
+	cp -r data/*.ui "$(DESTDIR)/$(prefix)/lib/clippy"
 	find "$(DESTDIR)/$(prefix)/lib/clippy" -type f | xargs chmod 644
 	find "$(DESTDIR)/$(prefix)/lib/clippy" -type d | xargs chmod 755
 
