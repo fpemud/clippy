@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Clippy
+Name[zh_CN]=大眼夹
+Comment=Desktop User Agent
+Comment[zh_CN]=桌面助手
+Exec=/usr/bin/clippy
+Terminal=false
+Type=Application

@@ -25,11 +25,16 @@ install:
 	cp -r data/org.fpemud.clippy.gschema.xml "$(DESTDIR)/$(prefix)/share/glib-2.0/schemas"
 	chmod 644 "$(DESTDIR)/$(prefix)/share/glib-2.0/schemas/org.fpemud.clippy.gschema.xml"
 
+	install -d -m 0755 "$(DESTDIR)/etc/xdg/autostart"
+	cp -r data/clippy.desktop "$(DESTDIR)/etc/xdg/autostart"
+	chmod 644 "$(DESTDIR)/$(prefix)/etc/xdg/autostart/clippy.desktop"
+
 uninstall:
 	rm -Rf "$(DESTDIR)/$(prefix)/bin/clippy"
 	rm -Rf "$(DESTDIR)/$(prefix)/lib/clippy"
 	rm -Rf "$(DESTDIR)/$(prefix)/share/clippy"
 	rm -Rf "$(DESTDIR)/$(prefix)/share/glib-2.0/schemas"
+	rm -Rf "$(DESTDIR)/etc/xdg/autostart/clippy.desktop"
 
 .PHONY: all clean install uninstall
 
