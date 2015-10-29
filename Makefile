@@ -27,7 +27,7 @@ install:
 
 	install -d -m 0755 "$(DESTDIR)/etc/xdg/autostart"
 	cp -r data/clippy.desktop "$(DESTDIR)/etc/xdg/autostart"
-	chmod 644 "$(DESTDIR)/$(prefix)/etc/xdg/autostart/clippy.desktop"
+	chmod 644 "$(DESTDIR)/etc/xdg/autostart/clippy.desktop"
 
 uninstall:
 	rm -Rf "$(DESTDIR)/$(prefix)/bin/clippy"
