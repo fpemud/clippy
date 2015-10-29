@@ -52,10 +52,10 @@ class CAgent(GObject.GObject):
             raise AttributeError('unknown property %s' % (prop.name))
 
     @property
-    def agent_list(self):
-        return sorted(os.listdir(self._app.agents_path))
+    def agent_size(self):
+        assert self._name != ""
+        return (self._prop["framesize"][0], self._prop["framesize"][1])
 
-    @property
     def frame_is_blank(self):
         assert self._name != ""
 
@@ -67,24 +67,29 @@ class CAgent(GObject.GObject):
             return True
         return False
 
-    @property
-    def frame_offset(self):
+    def get_frame_overlays(self):
         assert self._name != ""
+        assert not self.frame_is_blank()
+        
+        if self._aplay is None:
+            return 1
+        else:
+            return len(self._prop["animations"][self._aplay]["frames"][self._aplay_frame]["images"])
+
+    def get_frame_offset(self, overlay):
+        assert self._name != ""
+        assert not self.frame_is_blank()
 
         if self._aplay is None:
             return (0, 0)
         else:
-            offset_info = self._prop["animations"][self._aplay]["frames"][self._aplay_frame]["images"][0]
+            offset_info = self._prop["animations"][self._aplay]["frames"][self._aplay_frame]["images"][overlay]
             return (offset_info[0], offset_info[1])
 
     @property
-    def frame_size(self):
+    def get_frame_sound_file(self):
         assert self._name != ""
-        return (self._prop["framesize"][0], self._prop["framesize"][1])
-
-    @property
-    def frame_sound_file(self):
-        assert self._name != ""
+        assert not self.frame_is_blank()
 
 #        ret = self._aplay["frames"][self._aplay_frame].get("sound", None)
         ret = None
@@ -96,6 +101,9 @@ class CAgent(GObject.GObject):
     def surface(self):
         assert self._name != ""
         return self._surface
+
+    def get_all_agents(self):
+        return sorted(os.listdir(self._app.agents_path))
 
     def change_agent(self, agent_name):
         assert agent_name == "" or agent_name in os.listdir(self._app.agents_path)

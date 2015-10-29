@@ -47,7 +47,7 @@ class CWindow(Gtk.ApplicationWindow):
         self._app.agent.connect("animation-playback", self.on_agent_animation_playback)
 
     def on_app_switch_agent(self, menu_item, user_data=None):
-        al = self._app.agent.agent_list
+        al = self._app.agent.get_all_agents()
         self._app.agent.change_agent(al[random.randrange(0, len(al))])
 
     def on_app_help(self, menu_item, user_data=None):
@@ -71,19 +71,19 @@ class CWindow(Gtk.ApplicationWindow):
             cr.set_source_rgb(util.rgb2rf(bgcolor), util.rgb2gf(bgcolor), util.rgb2bf(bgcolor))
             cr.paint()
 
-        if self._app.agent.get_property("agent-name") != "" and not self._app.agent.frame_is_blank:
-            off_x, off_y = self._app.agent.frame_offset
-            cr.set_source_surface(self._app.agent.surface, off_x * -1, off_y * -1)
-
+        if self._app.agent.get_property("agent-name") != "" and not self._app.agent.frame_is_blank():
             if self._app.settings.get_boolean("native-resolution"):
                 cr.reset_clip()
-                sz_x, sz_y = self._app.agent.frame_size
+                sz_x, sz_y = self._app.agent.agent_size
                 cr.rectangle(0, 0, sz_x, sz_y)
                 cr.clip()
             else:
                 assert False
 
-            cr.paint()
+            for i in range(0, self._app.agent.get_frame_overlays()):
+                off_x, off_y = self._app.agent.get_frame_offset(i)
+                cr.set_source_surface(self._app.agent.surface, off_x * -1, off_y * -1)
+                cr.paint()
 
         return False
 
@@ -116,7 +116,7 @@ class CWindow(Gtk.ApplicationWindow):
 
     def _adv_get_resolution(self):
         if self._app.settings.get_boolean("native-resolution") and self._app.agent.get_property("agent-name") != "":
-            sz_x, sz_y = self._app.agent.frame_size
+            sz_x, sz_y = self._app.agent.agent_size
         else:
             sz_x = self._app.settings.get_int("x-resolution")
             sz_y = self._app.settings.get_int("y-resolution")
