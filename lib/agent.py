@@ -138,6 +138,15 @@ class CAgent(GObject.GObject):
             else:
                 if self._pa_timeout_cb is None:
                     self._pa_timeout_cb = GObject.timeout_add(self._animation_spacing_time, self._pa_timeout_callback)
+
+    def animate(self):
+        kl = list(self._prop["animations"].keys())
+        aname = None
+        while True:
+            aname = kl[random.randrange(0, len(kl))]
+            if not aname.startswith("Idle"):
+                break
+        self.play_animation(aname)
     
     def play_animation(self, animation_name):
         assert self._name != ""
@@ -148,10 +157,6 @@ class CAgent(GObject.GObject):
         self._pending_animations.append(animation_name)
         if self._aplay is None and len(self._pending_animations) == 1:
             self._do_play_animation()
-
-    def play_random_animation(self):
-        kl = list(self._prop["animations"].keys())
-        self.play_animation(kl[random.randrange(0, len(kl))])
 
     def _do_change_agent(self):
         self._name = self._pending_agent_change

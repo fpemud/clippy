@@ -92,6 +92,10 @@ class CWindow(Gtk.ApplicationWindow):
             self.begin_move_drag(event.button, event.x_root, event.y_root, event.time)
             return False
 
+        if event.type == Gdk.EventType._2BUTTON_PRESS and event.button == 1:
+            self._app.agent.animate()
+            return False
+
         if event.type == Gdk.EventType.BUTTON_PRESS and event.button == 3:
             self.context_menu.popup(None, None, None, None, event.button, event.time)
             return False
