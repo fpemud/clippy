@@ -158,9 +158,9 @@ class CAgent(GObject.GObject):
 
         self._pending_animations.append(self._get_random_misc_animation())
 
-        self._poke_time = datetime.now()
         if self._aplay is not None:
             self._aplay_exiting = True
+            self._poke_time = datetime.now()
         else:
             self._do_play_animation()
 
@@ -170,9 +170,9 @@ class CAgent(GObject.GObject):
         if self._pending_agent_change is not None:
             return
 
-        self._poke_time = datetime.now()
         if self._aplay is not None:
             self._aplay_exiting = True
+            self._poke_time = datetime.now()
 
     def is_animating(self):
         assert self._name != ""
@@ -212,6 +212,8 @@ class CAgent(GObject.GObject):
             self._dirname = None
             self._surface = None
             self._prop = None
+            self._idle_animation_list = None
+            self._deep_idle_animation_list = None
             self._poke_time = None
 
         self.notify("agent-name")
