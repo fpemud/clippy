@@ -26,5 +26,10 @@
       <summary>Agent Height</summary>
       <description>The height of the agent, in pixels</description>
     </key>
+    <key name="balloon-delay-factor" type="f">
+      <default>0.3</default>
+      <summary>Balloon Delay Factor</summary>
+      <description>Factor controling the delay time of balloon window</description>
+    </key>
   </schema>
 </schemalist>

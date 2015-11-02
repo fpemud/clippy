@@ -14,6 +14,7 @@ class CApplication(Gtk.Application):
         Gtk.Application.__init__(self, application_id="org.fpemud.clippy")
 
         self._lib_path = "/usr/lib/clippy"
+        self._images_path = "/usr/share/clippy/images"
         self._agents_path = "/usr/share/clippy/agents"
 
         self._settings = Gio.Settings.new("org.fpemud.clippy")
@@ -26,6 +27,10 @@ class CApplication(Gtk.Application):
     @property
     def lib_path(self):
         return self._lib_path
+
+    @property
+    def images_path(self):
+        return self._images_path
 
     @property
     def agents_path(self):

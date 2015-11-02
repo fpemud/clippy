@@ -93,7 +93,10 @@ class CWindow(Gtk.ApplicationWindow):
             return False
 
         if event.type == Gdk.EventType._2BUTTON_PRESS and event.button == 1:
-            self._app.agent.animate()
+            if not self._app.agent.is_animating():
+                self._app.agent.animate()
+            else:
+                self._app.agent.stop()
             return False
 
         if event.type == Gdk.EventType.BUTTON_PRESS and event.button == 3:
