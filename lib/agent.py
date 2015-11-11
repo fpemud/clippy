@@ -58,6 +58,11 @@ class CAgent(GObject.GObject):
             raise AttributeError('unknown property %s' % (prop.name))
 
     @property
+    def surface(self):
+        assert self._name != ""
+        return self._surface
+
+    @property
     def agent_size(self):
         assert self._name != ""
         return (self._prop["framesize"][0], self._prop["framesize"][1])
@@ -92,21 +97,15 @@ class CAgent(GObject.GObject):
             offset_info = self._prop["animations"][self._aplay]["frames"][self._aplay_frame]["images"][overlay]
             return (offset_info[0], offset_info[1])
 
-    @property
     def get_frame_sound_file(self):
         assert self._name != ""
-        assert not self.frame_is_blank()
 
-#        ret = self._aplay["frames"][self._aplay_frame].get("sound", None)
-        ret = None
+        if self._aplay is None:
+            return None
+        ret = self._prop["animations"][self._aplay]["frames"][self._aplay_frame].get("sound", None)
         if ret is None:
             return None
-        return os.path.join(self._dirname, "%s.mp3" % (ret))
-
-    @property
-    def surface(self):
-        assert self._name != ""
-        return self._surface
+        return os.path.join(self._dirname, "%s.ogg" % (ret))
 
     def get_all_agents(self):
         return sorted(os.listdir(self._app.agents_path))

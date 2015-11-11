@@ -46,6 +46,8 @@ class CWindow(Gtk.ApplicationWindow):
         self._app.agent.connect("notify::agent-name", self.on_agent_changed)
         self._app.agent.connect("animation-playback", self.on_agent_animation_playback)
 
+        util.init_play_sound()
+
     def on_app_switch_agent(self, menu_item, user_data=None):
         al = self._app.agent.get_all_agents()
         self._app.agent.change_agent(al[random.randrange(0, len(al))])
@@ -118,8 +120,13 @@ class CWindow(Gtk.ApplicationWindow):
 
     def on_agent_animation_playback(self, obj):
         assert obj == self._app.agent
+
         self.queue_draw()
-        # if there's sound, play it
+
+        if self._app.agent.get_property("agent-name") != "" and not self._app.agent.frame_is_blank():
+            sndfile = self._app.agent.get_frame_sound_file()
+            if sndfile is not None:
+                util.play_sound(sndfile)
 
     def _adv_get_resolution(self):
         if self._app.settings.get_boolean("native-resolution") and self._app.agent.get_property("agent-name") != "":
