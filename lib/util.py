@@ -36,11 +36,13 @@ class util:
 
         class PlayThread(threading.Thread):
             def run(self):
+                print("thread start")
                 while True:
                     sndfile = util._sound_queue.get()
                     if sndfile is None:
                         break
                     subprocess.Popen("/usr/bin/paplay %s" % (sndfile), shell=True).wait()
+                print("thread end")
 
         util._sound_queue = queue.Queue()
         util._play_thread = PlayThread()
@@ -58,3 +60,4 @@ class util:
     def play_sound(sndfile):
         assert util._play_thread is not None
         util._sound_queue.put(sndfile)
+        print(sndfile)

@@ -112,6 +112,7 @@ class CWindow(Gtk.ApplicationWindow):
 
         # changing to null-agent means we are quitting
         if self._app.agent.get_property("agent-name") == "":
+            util.fini_play_sound()
             self._app.quit()
             return
 
